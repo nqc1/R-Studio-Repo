@@ -1,0 +1,324 @@
+---
+title: "PS2"
+author: "Noah Cowit"
+date: "February 12, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Monday
+
+##1 R Options
+```{r}
+rops <- options()
+```
+
+###a.
+```{r}
+class(rops)
+length(rops)
+sapply(rops, class)
+```
+It is a list of length 72.
+
+###b.
+max.print: The maximum number of objects the print and show functions can print.
+width: Controls the maximum number of columns on a line.
+show.error.messages: Controls whether error messages are shown.
+
+
+
+
+
+##2 Factors
+###a.
+```{r}
+prime<- function(n){
+if (n==1||n==2){
+  return(TRUE)
+}
+  for(i in 2:(n-1)){ 
+    if ((n %% i) == 0){
+      return(FALSE)
+    }
+}
+  return(TRUE)
+  }
+
+
+factorization<- function(x){
+  fvec<-numeric()
+  
+  for(f in 1:(x)){
+  
+    if (x%%f==0 && prime(f)==TRUE){
+      fvec<- c(fvec, f)
+       
+    }
+  }
+  return(fvec)
+}
+f100<-lapply(1:100, factorization)
+```
+
+###b
+```{r}
+f100[90:100]
+```
+
+###c.
+```{r}
+flen<-sapply(f100, length)
+```
+
+###d.
+```{r}
+v100<-1:100
+plot(flen~v100)
+```
+
+###e.
+```{r}
+
+plotNumFactors<-function(x){
+fnum<-lapply(1:x, factorization)
+flen<-sapply(fnum, length)
+vnum<-1:x
+plot(flen~vnum)
+}
+plotNumFactors(500)
+```
+
+###f.
+```{r}
+plotMeanFactors<-function(x){
+fnum<-lapply(1:x, factorization)
+fmean<-sapply(fnum, mean)
+vnum<-1:x
+plot(fmean~vnum)
+}
+plotMeanFactors(500)
+```
+There seems to be a couple of clear lines, the largest being where the only prime factors were the number itself and 1, and large clumps of numbers where the number to be factorized is able to be broken down into almost entirely small numbers.
+
+
+
+##3 Poisson Distribution
+
+###a.
+```{r}
+poisList<-list()
+for(i in 1:100){
+  poisList[[i]]<-rpois(1000, i)
+  
+}
+
+```
+
+###b.
+```{r}
+poisMean<-lapply(poisList, mean)
+poisVar<-lapply(poisList, var)
+length(poisMean)
+length(poisVar)
+```
+
+###c.
+```{r}
+plot(1:100, poisMean, type="l", col="blue")
+lines(1:100,poisVar,col="green")
+```
+
+##4. Comparing Distributions
+
+###a.
+```{r}
+draws=list( a=numeric(100), b=numeric(100), c=numeric(100)) 
+
+for(i in 1:100){
+  draws$a[i]<-rnorm(1, i)
+  draws$b[i]<-rexp(1 , i)
+  draws$c[i]<-rpois(1, i)
+  
+}
+```
+
+###b.
+```{r}
+names(draws$a)="Normal"
+names(draws$b)="Exponential"
+names(draws$c)="Poisson"
+```
+
+###c.
+```{r}
+num100<-1:100
+lmdraws<-lapply(draws, function(x){lm(x~num100)} )
+```
+
+###d.
+You would expect the exponential distribution to have the worst linear fit, as it is inherently nonlinear in nature. The expected value is not on y=x. The Normal and Poisson Distribution would be expected to have better linear fit, as the mean of each distribution should increase by 1 for each integer increase of 1 to 100 (expected value tracks y=x). Because the Poisson distribution has a rightward skew for low values of x, the expected value may not track as closely to y=x, and the normal distribution should have the best linear fit.
+
+###e.
+```{r}
+sapply(lmdraws, function(x){summary(x)$r.squared})
+```
+
+###f.
+The Normal and Poisson Distribution would be expected to have better slopes of around 1, as the mean of each distribution should increase by 1 for each integer increase of 1 to 100 (expected value tracks y=x). We are literally feeding the distributions a mean value. The exponential distribution should have a negative slope, as since x increases, ln(x) will deacrease.
+
+###g.
+```{r}
+sapply(lmdraws, function(x){x$coef[2]})
+```
+
+#Wednesday
+
+##1. Gapminder Countries
+```{r}
+gapminder<-read.csv("gapminder.csv")
+countries<-unique(tolower(gapminder$country))
+```
+
+###a.
+```{r}
+grep("land$", countries, value = TRUE)
+```
+
+###b.
+```{r}
+grep("ee", countries, value = TRUE)
+```
+
+
+###c.
+```{r}
+grep("([[:lower:]])\\1{1}", countries, value = TRUE) 
+```
+
+###d.
+```{r}
+grep(".*(.).*\\1.*\\1", countries, value = TRUE)
+```
+
+###e.
+```{r}
+grep("([[:punct:]])", countries, value = TRUE)
+
+```
+
+##2 Reversing Strings
+```{r}
+Reverse<-function(x){
+  paste(rev(strsplit(x,'')[[1]]), collapse='')
+  
+}
+
+strReverse<-function(x){
+ result<-c()
+  words<-strsplit(x," ")[[1]]
+   for (i in 1:length(words)){
+    result[i]=Reverse(words[i])
+   }
+  paste(result, collapse=" ")
+}
+
+strReverse("the racecar went fast")
+```
+
+##3 Tess of the D'Urbervilles, by Thomas Hardy (gutenbergr) Package
+```{r}
+library(gutenbergr)
+library(dplyr)
+
+gutenberg <- gutenberg_works()
+
+Tess<-gutenberg_download(110)
+Tessb<-Tess$text
+tessb<-tolower(Tessb)
+tessyb<-gsub("[[:punct:]]", "", tessb)
+```
+
+###a.
+```{r}
+
+bwords<-strsplit(tessyb," ")
+
+awords<-unlist(bwords)
+cwords<-unique(awords)
+length(cwords)
+awords[[245]]
+for(i in 1:length(cwords)){
+  if(nchar(cwords[i])>23){
+    print(cwords[i])
+  }
+}
+```
+Note: Some of the lowerclass characters in this book talk in a run on way, so the longest words in the book are combinations of parts of words (seperated by removed dashes).
+
+###b.
+```{r}
+sort(table(awords), decreasing=TRUE)[1:11]
+```
+
+###c.
+```{r}
+words4<-grep("....", awords, value=TRUE)
+sort(table(words4), decreasing=TRUE)[1:11]
+```
+
+###d.
+```{r}
+let<-unlist(strsplit(awords, ""))
+letfreq<-sort(table(let), decreaseing=TRUE)
+letfreqf<-letfreq[6:31]
+barplot(letfreqf, ylab = "Frequency", xlab = "Letters")
+```
+
+###e.
+```{r}
+hist(nchar(awords))
+```
+
+##4. English versus Another Language Letter Frequencies
+```{r}
+#unique(gutenberg_metadata$language)
+#gutenberg_metadata %>% filter(language == "cy", has_text == TRUE)
+#gutenberg_metadata %>% filter(language == "en", has_text == TRUE)
+engbooks<-gutenberg_download(1:10)
+welbooks<-gutenberg_download(c(2734,8194,14354,14547,22528,49685))
+```
+
+```{r}
+Engtext<-engbooks$text
+engtext<-tolower(Engtext)
+engytext<-gsub("[[:punct:]]", "", engtext)
+ewords<-strsplit(engytext," ")
+engwords<-unlist(ewords)
+lete<-unlist(strsplit(engwords, ""))
+letefreq<-sort(table(lete), decreaseing=TRUE)
+letengfreq<-letefreq[c(1,2,3,10,14,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36)]
+letengfreq
+barplot(letengfreq, ylab = "Frequency", xlab = "Letters")
+```
+
+
+```{r}
+Weltext<-welbooks$text
+Welshtext<-gsub("[^[:alnum:]]", "", Weltext)
+weltext<-tolower(Welshtext)
+welytext<-gsub("[[:punct:]]", "", weltext)
+wwords<-strsplit(welytext," ")
+welwords<-unlist(wwords)
+letw<-unlist(strsplit(welwords, ""))
+letwfreq<-sort(table(letw), decreaseing=TRUE)
+letwfreq[16:41]
+letwelfreq<-letwfreq[16:41]
+barplot(letwelfreq, ylab = "Frequency", xlab = "Letters")
+```
+###Some Observations:
+###The most common letter in Welsh is a, while in english it is e
+###The Welsh letter distribution is much more evenly distributed accross all letters than english. That is, English seems to lend to using a few letters very often, while Welsh uses a greater variety of letters more regularly.

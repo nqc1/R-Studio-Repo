@@ -1,0 +1,407 @@
+---
+title: "Plot"
+author: "Noah Cowit"
+date: "November 9, 2017"
+output:
+  word_document: default
+  pdf_document: default
+---
+#What are the Factors Relating to Stronger Hurricanes?
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r, echo=FALSE}
+co2<-read.table('ftp://aftp.cmdl.noaa.gov/products/trends/co2/co2_mm_mlo.txt', comment.char = "#", na.string = "-99.99" ) 
+colnames(co2) <- c("Year","Month","Ddate","Average","Interpolated","Trend","Numdays")
+coo<-co2$Interpolated
+```
+
+```{r, echo=FALSE}
+heatindex<-read.table('https://www.epa.gov/sites/production/files/2016-08/ocean-heat_fig-1.csv', sep=",", header=TRUE)
+colnames(heatindex) <- c("Year","MRI/JMA","CSIRO","NOAA")
+
+```
+###Introduction
+```{r, echo=FALSE}
+Hurrpath<-("HURDAT3.csv")
+Hurdatorig<-read.csv(Hurrpath,  na.string = "-----")
+Hurdat<-Hurdatorig[-3]
+names(Hurdat) <- c("Year","Month","Category","Pressure","Wind","Name", "Heat", "States")
+```
+It is not uncommon to read that hurricanes are increasing in strength. Nearly every time there is a truly devestating hurricane; an Andrew, a Katrina, a Sandy, or a Maria, hurricane related articles are published in many major news organisations. Most explain how global warming could potentially cause an increase in the strength of hurricanes, but some go so far to say that this is already happening today, with claims based on climate science that use little to no statisitcal evidence to back these claims up. Hurricanes are a particularly exteme natural disaster, the 2017 season has caused hundreds of billions of dollars and damage, and hundreds of deaths. Understanding what causes landfalling hurricanes to strengthen does not lack import, yet hypothesis must be subject to statistical as well as scientific analysis. This project will look at data from US landfalling hurricanes between 1851 and 2016, to attempt to identify predictors of hurricane intensity, of which wind speed/category will be our measure.
+
+```{r, echo=FALSE}
+Year<-Hurdat$Year
+Month<-Hurdat$Month
+Category<-Hurdat$Category
+Pressure<-Hurdat$Pressure
+Wind<-Hurdat$Wind
+Heat<-Hurdat$Heat
+States<-Hurdat$States
+```
+###Data obtained from 2 sources.
+**HURDAT: NOAA.** 
+Variables include; Year: The year the hurricane made landfall. Month: The month the hurricane made landfall. Category: The category of the hurricane when it made landfall (measured on the 1-5 saffir-simpson scale, determined by Max sustained 1 minute wind speeed). 
+Pressure: Lowest barometric pressure in the hurricane when it made landfall.
+Wind: Maximum 1 minute sustained wind speeds in the hurricane when it made landfall
+States: State hurricane first made landfall on.
+
+**Ocean Heat Index Data: EPA**
+Heat: Yearly index of ocean heat temperatures for the planet.
+
+**Let's Just Test This Out**
+
+###Wind versus Heat
+```{r, echo=FALSE}
+plot(Heat, Wind)
+WH<-lm(Wind~Heat, data=Hurdat)
+summary(WH)
+abline(WH)
+```
+
+The relationship is not significant (p=0.473), and opposite of what we would expect! Based on this linear regression, it does not look like hotter yearly ocean temperatures are correlated with increased wind speeds of hurricanes. 
+
+
+###Creating a Regions variable 
+```{r}
+plot(States)
+States<-Hurdat$States
+Region<-as.numeric(States)
+for (i in 1:288){
+  if (Region[i]<8 & Region[i]>6 | Region[i]<5 ){
+   Region[i]=2
+ } 
+  if( Region[i]>8 & Region[i]<12 | Region[i]>4 & Region[i]<7){
+    Region[i]=0
+  }
+   if(Region[i]>11| Region[i]>7 & Region[i]<9){
+   Region[i]=1
+   }
+}
+```
+All states in the Northeast are set to 0, all states in the middle atlantic are set to 1, all states on the Gulf coast are set to 2. This is to reflect the conventional wisdom that hurricanes on the Gulf of Mexico are stronger than hurricanes in the Middle Atlantic, which are stronger in turn than hurricanes in the Northeast.
+
+###Making Month a numerical variable from Peripheral to the center of the Hurricane Season 
+```{r}
+Category=Hurdat$Category
+bMonth<-as.numeric(Hurdat$Month)
+for (i in 1:288){
+ if (bMonth[i]>4){
+   bMonth[i]=bMonth[i]+1
+ } 
+  if(bMonth[i]<2){
+    bMonth[i]=5
+  }
+}
+```
+bMonth is a numeric variable in which the months on the peripheral of the hurricane season. (etc, June, November, July), are lower numbers and months in the center of the hurricane season are higher numbers. September is represented by the number 7, as it is generally considered the most active month in the hurricane season. It is not contested that months towards the center of the hurricane season see more hurricanes than those on the outside, but this variable will also prove usefull in determining whether hurricanes in the center of the hurricane season tend to be stronger than those that form early or late.
+
+
+
+###Pairs for Hurdat
+```{r, echo=FALSE}
+pairs(Hurdat[-6])
+```
+Notes: Category and Wind obviously have a strong positive correlation, as one is completely defined by the other. Categrory and Wind seem to be negatively correlated with pressure, consistant with climate science that storms with lower barometrioc pressures tend to have higher wind speeds. Heat and Year seem positively correlated, consistant with Global Warming causing earths ocean temperature to increase. Category and pressure and pressure and wind both show clear heteroscedasticity.
+
+
+```{r, echo=FALSE}
+x=cbind(Category, Wind, Pressure, Heat, bMonth, Year, Region)
+cor(na.omit(x))
+```
+All of the correaltion observations from pairs seemingly hold up. There also seems to be a slightly bMonth and Wind/Category and a sligtly positive correlation between Region and Wind/Category. There is a slightly negative correlation between bMonth and Pressure.
+
+###Scatplots
+```{r, echo=FALSE}
+require(ggplot2)
+qplot(Category, Wind)
+
+qplot(Pressure, Wind)
+qplot(Heat, Wind)
+qplot(bMonth, Wind)
+qplot(Year, Wind)
+qplot(Region, Wind)
+```
+Notes: Wind and Category show a strong positive correlation. As these variables both measure the same quantity (intensity), we will tend to focus on the wind variable for its' incereased specificity. Wind and Pressure again shows clear heteroscedasticity and a negative correlation. Wind and bMonth shows clear heteroscedasticity and a potential positive correalation. This is the same for Wind Versus Region.
+
+## Simple Linear Regressions
+###With Category as Y
+```{r, echo=FALSE}
+Simplelin<-lm(Category~Pressure+Heat+Region+bMonth+Year, data=Hurdat)
+summary(Simplelin)
+```
+Here we see a strong R squared value and adjusted R squared value, as well as a statistically significant f-statistic. Yet the only predictor that shows a statistically significant relationship with Category is Pressure, although Region is almost there.
+
+
+```{r, echo=FALSE}
+require(car)
+vif(Simplelin)
+```
+Heat and year show some fairly clear multicolinearity. They both should probably not be in the model.
+```{r, echo=FALSE}
+plot(Simplelin)
+```
+There seems to be some unequal spreading and a bit of curvature in the residuals versus fitted values plot. The qqplot looks kind of off, with diviation from the line of normalcy on the edges a fair bit more than we can be completly comfortable. There may be a transformation in order, as well as some outliers, the most obvious being point 285.
+
+###Testing for Outliers
+```{r, echo=FALSE}
+require(car)
+outlierTest(Simplelin)
+cutoff <- 2/((nrow(Hurdat)-length(Simplelin$coefficients)-2)) 
+plot(Simplelin, which=4, cook.levels=cutoff)
+influencePlot(Simplelin,	id.method="identify", main="Influence Plot", sub="Circle size is proportial to Cook's Distance", labels=TRUE )
+plot(hatvalues(Simplelin))
+abline(h = 2 * length(Simplelin$coef)/length(Simplelin$residuals), lty = 2)
+plot(hatvalues(Simplelin), rstudent(Simplelin))
+```
+Here we see that point 285 is a bit of an outlier, with a studentized residual with and absolute value of over 3 and a cooks distance of .3. Let's see what this point is.
+
+```{r, echo=FALSE}
+Hurdat[285,]
+Hurdat[206,]
+Hurdat[275,]
+```
+The potential outlier is hurricane Sandy, perhaps because Sandy had a very low barometric pressure despite being a Category 1 hurricane. Sandy is a hurricane, and not too much of an outlier, so we are going to include it in the data for now. Two other potential outliers are Gracie amd Katrina. They do not seem to be nearly as influencial as the Sandy point on the data set (their cooks values are more in the range of other data points) but are worth keeping an eye on nevertheless.
+
+##BoxCox
+In the residuals versus fitted values plot, we saw a bit of curvature, but not too much spreading. A transformation on y is probably not in order, but we can use BoxCox to know for sure. To determine the magnitude of transformation we will use the BoxCox function.
+```{r, echo=FALSE}
+require(MASS)
+mbc<-boxcox(Simplelin)
+with(mbc, x[which.max(y)])
+```
+We probably don't need a transformation on Y here, the 95% boxcox interval includes the 0 value, although a transformation by .5 would potentially be apt. As we have decided to focus on wind instead of Category, lets investigate a simple multiple linear regression with Wind as Y.
+
+###With Wind as Y
+```{r, echo=FALSE}
+Spimplelin<-lm(Wind~Pressure+Heat+Region+bMonth+Year, data=Hurdat)
+summary(Spimplelin)
+```
+Here we see a strong R squared value and adjusted R squared value, as well as a statistically significant f-statistic. Yet the only predictors that show a statistically significant relationship with Wind are Pressure and Region.
+
+###Variance Inflation Factor
+```{r, echo=FALSE}
+vif(Spimplelin)
+```
+It looks like there's some multicolinearity between heat and year. Both should probably not be included in the data.
+
+```{r, echo=FALSE}
+plot(Spimplelin)
+```
+There isn't apparent unequal spreading (heteroscedasticity) or curvature in the residuals versus fitted values plot. The qqplot is nearly perfect. indicating normal errors. There still could be a transformation in order, as well as some outliers, the most obvious being point 285.
+###Testing for Outliers
+```{r, echo=FALSE}
+require(car)
+outlierTest(Spimplelin)
+cutoff <- 2/((nrow(Hurdat)-length(Spimplelin$coefficients)-2)) 
+plot(Spimplelin, which=4, cook.levels=cutoff)
+influencePlot(Spimplelin,	id.method="identify", main="Influence Plot", sub="Circle size is proportial to Cook's Distance", labels=TRUE )
+plot(hatvalues(Spimplelin))
+abline(h = 2 * length(Spimplelin$coef)/length(Spimplelin$residuals), lty = 2)
+plot(hatvalues(Spimplelin), rstudent(Spimplelin))
+```
+Here we see that point 285 is a bit of an outlier, with a studentized residual with and absolute value of over 3 and a cooks distance of .5. Is this point still Sandy?
+
+```{r, echo=FALSE}
+Hurdat[285,]
+Hurdat[206,]
+Hurdat[251,]
+```
+Yes, although notably Kartrina is no longer a potential outlier, being replaced by Andrew.
+
+##BoxCox
+In the residuals versus fitted values plot, we saw a bit of curvature, but not too much spreading. A transformation on y is probably not in order, but we can use BoxCox to know for sure. To determine the magnitude of transformation we will use the BoxCox function.
+```{r, echo=FALSE}
+require(MASS)
+mbc<-boxcox(Spimplelin)
+with(mbc, x[which.max(y)])
+```
+It looks like 0 will work, but there is a wide range of possible transformation values. Anything from a -1 to a .5  transformation is within the 95% confidence interval.
+
+##Step Wise Regression
+###Category is Y
+We will now perform a couple of stepwise regressions using both BIC and AIC criteria to determine which predictor varaibles to include in our model.
+
+**AIC**
+```{r, echo=FALSE}
+summary(step(Simplelin, direction="both",  k=2))
+summary(step(Simplelin, direction="backward",  k=2))
+```
+The AIC stepwise regression indicates a model with the pressure, heat, and region predictors is best. Region does not have a statisitcally significant p-value, but all other p-values point to significance. The Adjusted R-squared value is .781, indicating that 78.1% of variation is explained by this model.
+
+**BIC**
+```{r, echo=FALSE}
+n=length(Simplelin$residuals)
+summary(step(Simplelin,  k=log(n)))
+```
+The BIC stepwise regression indicates a model with just pressure and heat as predictors. Having a larger penalty term, this result is not unexpected. . The Adjusted R-squared value is .7749, lower than the model with three predictors. 
+
+
+```{r, echo=FALSE}
+Nsimple<-lm( Category ~ Pressure + Heat + Region)
+```
+```{r, echo=FALSE}
+Nsimple2<-lm( Category ~ Pressure + Heat)
+```
+
+```{r, echo=FALSE}
+plot(Nsimple2)
+```
+The residuals versus fitted value plot has a larger spread towards lower fitted values, but the categorical nature of category limits the interpretation of this plot. The qqplot shows a bit more diviation from the line of normalcy than feels comfortable, under a situation where errors are completely normal. Let us now look at the stepwise regression with wind as Y, our main study.
+
+###Wind is Y
+**AIC**
+```{r, echo=FALSE}
+summary(step(Spimplelin, direction="both",  k=2))
+summary(step(Spimplelin, direction="backward",  k=2))
+```
+
+
+**BIC**
+```{r, echo=FALSE}
+n=length(Spimplelin$residuals)
+summary(step(Spimplelin,  k=log(n)))
+```
+The AIC and BIC stepwise regressions agree on the same model, despite the BIC's larger penalty term. This model included the predictors of Pressure, Heat, and Region, all of which have statistically significant relationships with Wind. The p-value for the f-statisitc is also significant, and the R-squared value indicates 74.8% of variation in Wind is explained by the model. At this point it is worth investigating coefficients. The coefficient for Pressure we see is negative, which would be expected. Lower pressure storms should have stronger wind speeds. Region has a positive coefficient, also an expected result, as storms in the mid-atlantic would be expected to be stronger than storms in northeast, and storms in the gulf of mexico are expected to be stronger than those in the mid-atlantic. The Coefficient for Heat is particularly notable, beign both statistically significant and the opposite of expected. This may be due to intruistic limitations in the data, but it is worth checking for multicolinearity anyways.
+
+
+```{r, echo=FALSE}
+Nspimple<-lm( Wind ~ Pressure + Heat + Region)
+```
+```{r, echo=FALSE}
+require(car)
+vif(Nspimple)
+```
+There does not seem to be evident multicolinearity, indicating that removing a predictor is not going to switch the sign of the heat coefficient. Perhaps an outlier could be causeing the issue?
+
+```{r, echo=FALSE}
+plot(Nspimple)
+```
+The residuals versus fitted values plot does not show evidence of heteroscedasticity or curvature, however potential outliers have become more apparent. The qqplot is nearly perfect (except for Sandy), indicating normal errors. The residuals versus leverage plot also shows the increased prominance of the Sandy outlier. Removal of Sandy may be in order.
+
+```{r, echo=FALSE}
+Nspimple2<-lm( Wind[-285] ~ Pressure[-285] + Heat[-285] + Region[-285])
+summary(Nspimple2)
+```
+```{r, echo=FALSE}
+plot(Nspimple2)
+```
+The removal of Sandy actually makes the Heat predictor more significant. However, without Sandy the Region predictor no longer carries statistical significance. This may be due to low sample size, there are very few hurricanes that make landfall in the Northeast, removing even one data point can make the relationship invalid. While removing Sandy was a usefull exercise, the original decision to include Sandy in the model seems apt. While Sandy was a devestating hurricane, there are no real reasons why Sandy is a corrupted sample. While Sandy may be an outlier, it is still a valid data point in a dataset that is not extremily deep, thus the final model will be considered the stepwise regression with Sandy included.
+```{r, echo=FALSE}
+summary(Nspimple)
+```
+**Interpretation of coefficients** 
+All else being held equal, a decrease in Pressure by 1 is predicted to increase Wind speed by about .7848.
+All else being held equal, a decrease on Heat by 1 is predicted to increase Wind speed by about 1.5147.
+All else being held equal, an increase in Region by 1 is predicted to increase Wind speed by about 4.5439.
+```{r, echo=FALSE}
+confint(Nspimple)
+```
+**Interpretation of Confidence Intervals**
+We are 95% confident that the population coeffiecient for Pressure is between -0.9146945 and -0.6550048, the population coeffiecient for Heat is between -2.4012008 and -0.6281925, and the population coeffiecient for Region is between 0.1281569 and 8.9596429.
+
+
+###Ridge Regression for the Wind Model
+Another technique that was attempted was the ridge regression. This model, while not the final model, can tell something about the data, and thus seems silly to omit.
+
+```{r, echo=FALSE}
+require(MASS)
+plot(lm.ridge(Wind~Pressure+Heat+Region+bMonth+Year, lambda = seq(0, 100, by = 0.01))) 
+```
+
+```{r, echo=FALSE}
+GCV<-lm.ridge(Wind~Pressure+Heat+Region+bMonth+Year,  data=Hurdat, lambda = seq(0, 
+    100, by = 0.01))$GCV
+plot(seq(0, 100, by = 0.01), lm.ridge(Wind~Pressure+Heat+Region+bMonth+Year, data = Hurdat, lambda = seq(0, 
+    100, by = 0.01))$GCV, type = "l")
+```
+```{r, echo=FALSE}
+which.min(GCV)
+ridge<-lm.ridge(Wind~Pressure+Heat+Region+bMonth+Year, data = Hurdat, lambda =  2.63 )
+```
+```{r, echo=FALSE}
+coef(ridge)
+```
+
+**Year and Heat had VIF values in an original reidge regression greater than 5, indicating multicolinearity. As it seems unlikely that time itself has a causal relationship with more intense hurricanes, Year was removed from the model.**
+
+```{r, echo=FALSE}
+Pressure1<-Pressure*-0.7391273 
+Heat1<-Heat*-1.3405848
+Region1<-Region* 4.4498871 
+bMonth1<-bMonth*0.4254122  
+Year1<-Year*-0.0161870
+ridges<-lm(Wind~Pressure1+Heat1+Region1+bMonth1)
+```
+
+```{r, echo=FALSE}
+plot(ridges)
+```
+```{r, echo=FALSE}
+summary(ridges)
+```
+While ridge regression removes significant amounts of multicolineaity, it introduces a level of bias, making it hard to truly put these results into context. Heat now has a positive coefficient, the expected result, but so does Pressure, which is almost certainly wrong. This is probably a result of the introduction of bias on already small coefficients. Precision is probably more important than accuracy in hurricane data, especially since after year is eliminated from the data, multicolinearity is negligable.
+
+
+###Making Category a Binomial Variable
+A couple of additional questions can be address using a bianary Category variable. bCategory seperates into two "categorys". A bCategory of 0 indicates a hurricane with a Category of 1-3, while a bCategory of indicates a hurricane with a Category of 4 or 5.
+```{r}
+bCategory=Category
+for(i in 1:288){
+  if (bCategory[i] < 4){
+    bCategory[i]=0
+  }
+   if (bCategory[i]>3){
+    bCategory[i]=1
+  }
+}
+```
+
+
+###Binomial Category versus Region
+Using a GLM of the binomial family, we will attempt to determine if very strong hurricanes tend towards more southerly regions.
+```{r, echo=FALSE}
+GCR<-glm(bCategory~Region, family="binomial")
+summary(GCR)
+confint(GCR)
+```
+The relationship is as expected. Region has a positive coefficient with bCategory, as expected, however it is not statisitcally significant (p-val of .288). The high Std. Error and the confidence interval that includes both negative and positive values is evidence to that. This may be due to a limited amount of hurricane data, particularly Northeastern hurricane data. Nevertheless, statistically significant conclusions cannot be drawn from this model.
+
+
+
+###Binomial Catagory versus Month
+Using a GLM of the binomial family, we will attempt to determine if very strong hurricanes tend towards months in the center of the hurricane season, dispite our final model indicating that wind speed does not have a statistically significant relationship with bMonth. Perhaps there is a cut off with very strong hurricanes.
+```{r, echo=FALSE}
+CMB<-glm(bCategory~bMonth, data=Hurdat, family="binomial")
+summary(CMB)
+exp(confint(CMB))
+```
+There just may be. The coeffient for bMonth is positive, with a statistically significant p-value (.025), indicating very strong hurricanes tend towards months in the center of the hurricane season. The confidence interval also exists in a completly positive realm, indicating that the population coefficient for bMonth is between 1.102252542 and 2.6284041, on a scale from 0 to infinity, multiplied by a factor of the natural log.
+
+
+
+##Conclusions:
+
+###Pressure is always strong predictor for top hurricane wind speeds, in support of much scientific evidence.
+###Regional variations in hurricane wind speed exist, but extreme examples like Sandy are of note. More data would be usefull to see if regional patterns hold up.
+###Ocean heat index is shown to have a statistically significant negative correlation with hurricane strength in the Stepwise model.
+###The relationship between hurricane Category/Wind speed and Global Ocean Heat is potentially more complex than anticipated. The strength/power of hurricanes is not just about wind speed. The physical size of the storm/area impacted matters as well. 
+###The GLM model indicates not only that there are more hurricanes during the peak if hurricane season, but that major hurricanes tend to happen then as well.
+
+
+##Limitations/Imporvements
+
+###Local Ocean Temperatures (North Atlantic Ocean Temperatures) durring the hurricane season (rather than a yearly index) may be a better predictor than Global Ocean Temperatures.
+###Landfalling Atlantic hurricanes are only a small percentage of the worlds total. Including more hurricanes in the data could be insightful, perhaps non-landfalling hurricanes and/or East Asian typhoons (hurricanes by a different name), to allow for a more robust data set.
+###The physical size of hurricanes could be an interesting measure of intensity as opposed to Wind Speed, as the physical size of a hurricane often has much to do with hurricane characteristics that cause damage (storm surge, power outages, etc), but this is fairly unrelated to maximum sustained wind speeds.
+
+
+
+
+
+
+
+

@@ -1,0 +1,222 @@
+---
+title: "HW02"
+author: Noah Cowit
+date: "September 17 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1
+##a. 
+If a and c have different signs, the correlation between V amd W will be inverted.
+$$\begin{aligned}
+Cor(V,W)&=\frac{Cov(aX+b,cY+d)}{SD(aX+b)SD(cY+d)}\\
+&=\frac{acCov(XY)}{ac\sigma_{X}\sigma_{Y}}\\
+&=\frac{Cov(XY)}{\sigma_{X}\sigma_{Y}}\\
+&=\pm Cov(X,Y)
+\end{aligned}$$
+   
+###
+##b.
+$$\begin{aligned}
+r_{VW}=\frac{\sum z_{V_i}z_{W_i}}{n-1}&=\frac{\sum \frac{((aX+b)_i-a\overline X-b)}{\sigma_{aX}}\frac{((cY+d)_i-c\overline Y-d)}{\sigma_{cY}}} {n-1}\\
+&=\frac{\pm \sum \frac{((X)_i-\overline X)}{\sigma_{X}}\frac{((Y)_i\overline Y)}{\sigma_{Y}}} {n-1}\\
+&=\pm r_{XY}
+\end{aligned}$$
+   
+###
+##c.
+$$\begin{aligned}
+b0_{XY}&=r_{XY}\frac{\sigma_{Y}}{\sigma_{X}}\\
+b1_{WV}&=r_{WV}\frac{\sigma_{cY}}{\sigma_{aX}}\\
+b1_{WV}&=\pm r_{XY}\frac{\sigma_{cY}}{\sigma_{aX}}\\
+b1_{WV}&=\pm b1_{XY}\frac{c}{a}\\
+\end{aligned}$$
+
+$$\begin{aligned}
+b0_{XY}&=\overline Y-b_1\overline X \\
+b0_{WV}&=c\overline Y+d- (b1_{WV})(a\overline X-b)\\
+\end{aligned}$$
+    
+###
+##d.
+```{r}
+babySamp<-read.delim("/Users/Noah Cowit/Dropbox/Blue July 2016/College/Classes/S 3/STATS 346/babysamp.txt")
+
+```
+
+###i.)
+```{r}
+Y=babySamp$DBWT
+X=babySamp$ESTGEST
+lm(Y~X, data = babySamp)
+```
+
+###ii.)
+```{r}
+W=Y/454
+V=X*7+14
+lm(W~V, data = babySamp)
+b1wv=((1/454)/7)*155.3
+b1wv
+b0wv=(1/454)*mean(Y)-b1wv*(mean(X)*7+14)
+b0wv
+```
+The coefficients match.
+
+##
+   
+#2
+   
+##
+##a.
+$$\begin{aligned}
+E(b_1)&=E(\sum k_i y_i)\\
+&=\sum k_i(E(\beta_0)+E(\beta_1x_i)+E(\epsilon))\\
+&=\sum k_i(\beta_0+\beta_1x_i+0)\\
+&=\sum k_i\beta_0+\sum k_i \beta_1 x_i\\
+&=0+\sum \frac{x_i-\overline x}{S_{xx} } \beta_1 x_i\\
+&=\frac {\beta_1}{S_{xx}}\sum (x_i-\overline x)x^i\\
+&=\frac {S_{xx}\beta_1} {S_{xx}}\\
+&=\beta_1
+\end{aligned}$$
+   
+###
+##b.
+$$\begin{aligned}
+Var(b_1)&=Var(\sum k_iy_i)\\
+&=\sum k_i^2 Var(y_i)\\
+&=\frac{S_{xx}}{S_{xx}^2}\sigma_\epsilon ^2\\
+&=\frac{\sigma_{\varepsilon}^2}{S_{xx}}
+\end{aligned}$$
+  
+##
+    
+#3
+##a.
+$$\begin{aligned}
+Cov(y_i, b_i)&=Cov(y_i, \sum k_j y_j)\\
+&=\sum k_j Cov(y_i,y_j)\\
+&=k_i Cov(y_i,y_i)+\sum  k_j Cov(y_i,y_j)\ (where \ y_i \ and \ y_j \ are \ independent)\\
+&=k_i Var(y_i)+0\\
+&=k_i \sigma^2\\
+\end{aligned}$$
+    
+###
+##b.
+$$\begin{aligned}
+Cov(\overline y, b_i)&=Cov(\sum \frac {y_i}{N}, b_1)\\
+&=\sum \frac{1}{N}k_i Cov(y_i,y_i)\\
+&=\frac{1}{N}\sum k_i \sigma^2 \\
+&=\frac{\sigma^2}{N}\sum k_i  \\
+&=\frac{\sigma^2}{N}\sum \frac {x_i-\overline x}{S_{xx}} \\
+&=\frac{\sigma^2}{N}*0\\
+&=0\\
+\end{aligned}$$
+    
+###
+##c.
+The slope of the regression would not change if you added 100 to every y value (which would increase $\overline y$ by 100). A change in mean has no effect on a change in slope.
+    
+###
+##d.
+$$\begin{aligned}
+Cov(\overline y, b_i)&=Cov(\sum \frac {y_i}{N}, b_1)\\
+&=Cov(b_0,b_1)\\
+&=Cov(\overline Y-b_1 \overline x,b_1)\\
+&=Cov(-b_1 \overline x,b_1)\\
+&=-\overline xVar(b_1)\\
+&=-\bar{x} \frac{\sigma^2}{S_{xx}}\\
+\end{aligned}$$
+    
+###
+##e.
+
+$$\begin{aligned}
+Var(b_0)&=Var(\bar Y-b)\\
+&=Var(\bar Y)-\bar x^2 Var(b_1)\\
+&=\frac {\sigma^2}{n}-x^2 \frac {\sigma^2}{S_{xx}}
+\end{aligned}$$
+    
+###
+##f.
+$$\begin{aligned}
+cor(b_0,b_1)&=\frac{ -\bar{x} \frac{\sigma^2}{S_{xx}}}{\sqrt{\frac {\sigma^2}{n}-x^2 \frac {\sigma^2}{S_{xx}}}\sqrt{ \frac {\sigma^2}{S_{xx}}}}\\
+&=\frac{ -\bar{x} \frac{\sigma^2}{S_{xx}}}{\sqrt{\frac {1}{n {S_{xx}^2}}- \frac {x^2}{S_{xx}}}\sqrt{ {\sigma^4}}}\\
+&=\frac{  \frac{-\bar{x}}{S_{xx}}}{\sqrt{\frac {1}{n {S_{xx}^2}}- \frac {x^2}{S_{xx}}}}*\frac{S_{xx}}{S_{xx}}\\
+&= \frac{-\bar{x}}{\sqrt{\frac{S_{xx}}{n} + \bar{x}^2}}
+\end{aligned}$$
+
+##
+
+#4
+##a.
+```{r}
+bodyfat <- read.delim("http://sites.williams.edu/rdeveaux/files/2014/09/bodyfat.txt")
+PBF<-bodyfat$Pct.BF
+Weight<-bodyfat$Weight
+lmfit<-lm(PBF~Weight,data=bodyfat)
+```
+
+###
+##b.
+```{r}
+plot(Weight, PBF)
+abline(lmfit)
+```
+
+
+###
+##c.
+```{r}
+summary(lmfit)
+qt(.975, df=248)
+ 0.18938-1.97*(.01533)
+ 0.18938+1.97*(.01533)
+```
+95% confidence interval for slope is (0.1591799,0.2195801).
+
+
+##
+##d.
+```{r}
+newdf <- data.frame(Weight=200)
+predict(lmfit,new=newdf, se=T)
+```
+
+###
+##e.
+```{r}
+plot(residuals(lmfit)~predict(lmfit))
+```
+There doesn't seem to be a relationship between the residuals and the predicted values.
+##
+
+#5
+##a.
+```{r}
+library(mosaic)
+slopes <- do(1000)*lm(Pct.BF~Weight,data=resample(bodyfat))
+```
+```{r}
+hist<-hist(slopes$Weight)
+hist
+```
+Yes, the center is at ~.19, very close to the .18938 we got on the regression earlier. The shape seems normal, which is to be expected in a bootstrap confidence interval. The distribution seems to hold true with the 95% confidence interval from earlier. Most of the slope values seem to be in the range of (0.1591799,0.2195801).
+
+###
+##b.
+```{r}
+quantile(slopes$Weight,.025)
+quantile(slopes$Weight,.975)
+```
+
+###
+##c.
+The bootstrapped confidence interval (0.1602539,0.2181521) is very close to the CI from 4c (0.1591799,0.2195801).
+
+
+
