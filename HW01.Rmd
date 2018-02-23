@@ -1,0 +1,228 @@
+---
+title: "HW01"
+author: Noah Cowit
+date: "March 9, 2017"
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1
+##a.
+###P(0)=1/2 
+###P(5)=1/4 
+###P(10)=3/13
+###P(30)=1/52
+###
+
+##b.
+```{r}
+.5*0+.25*5+(3/13)*10+(1/52)*30
+```
+###
+##c.
+```{r}
+cards<-numeric(52)
+cards[1:13]<-5
+cards[14:25]<-10
+cards[26]<-30
+sd(cards)
+```
+#
+
+#2
+##a. 
+$$ \frac{n+1} 2$$
+
+##b.
+$$\sqrt\frac{(n^2-1)}{12}$$
+
+##c.
+```{r}
+dice100000<-numeric(100000)
+for(i in 1:100000)
+  {
+roll<-sample(1:20, size=1, replace=TRUE)
+dice100000[i]<-roll
+}
+mean(dice100000)
+sd(dice100000)
+21/2
+sqrt((20^2-1)/12)
+
+```
+#
+
+#3
+
+##a.
+$$\begin{aligned}
+Cov(X+a,Y+b) &= E((X+a-E(X+a))(Y+b-E(Y+b)))\\
+&= E((X+a-E(X)-a)(Y+b-E(Y)-b))\\
+&= E((X-E(X))(Y-E(Y)))\\
+&= E((X-\mu_X)(Y-\mu_Y))\\
+&= Cov(X, Y)\\
+\end{aligned}$$
+
+
+##b.
+
+$$\begin{aligned}
+Cov(aX, bY) &= E(XaYb) - E(Xa)E(Yb)\\
+&= abE(XY) - abE(X)E(Y)\\
+&= ab(E(XY) - E(X)E(Y))\\
+&= ab(E(XY) - \mu_X\mu_Y)\\
+&= abCov(X,Y)\\
+\end{aligned}$$
+
+
+##c.
+$$\begin{aligned}
+Cov(X+Z, Y) &= E((X+Y)Z) - E(X+Y)E(Z)\\
+&= E(ZX)+E(ZY)+(E(X)+E(Y))E(Z)\\
+&= E(ZX)+E(ZY)+(E(X)E(Z)+E(Y)E(Z))\\
+&= E(XZ)+E(X)E(Z)+E(YZ)+E(Y)E(Z)\\
+&= Cov(X,Z) + Cov(Y,Z)\\
+\end{aligned}$$
+
+#4.
+##a.
+$$\begin{aligned}
+Var(kX)&=E(k^2X^2)-[E(kX)]^2\\
+&=k^2E(X^2)-k^2[E(X)]^2\\
+&=k^2(E(X^2)-[E(X)]^2)\\
+&=k^2 \sigma^2
+\end{aligned} $$
+
+##b.
+$$Cov(X,X)=E(X^2)-E(X)E(X)=\sigma^2$$
+$$\begin{aligned}
+Var(X+X)&=Var(X)+Var(X)+2Cov(X,X)\\
+&=\sigma^2+\sigma^2+2\sigma^2\\
+&=4\sigma^2\\
+\end{aligned} $$
+
+##c.
+$$Cor(X,X)=\frac{Cov(X,X)}{\sigma^2}=\frac{\sigma^2}{\sigma^2}=1$$
+
+###
+#5
+##a.
+$$E(Y)=\int y\frac{1}{b-a}dy=\frac{b^2}{2(b-a)}-\frac{a^2}{2(b-a)}=\frac{b+a}{2}$$
+
+##b.
+$$\begin{aligned}
+E(Y^2)&=\int_a^b\frac{1}{b-a}*Y^2dx\\
+&=\frac{b^3}{3}(\frac{1}{b-a})-\frac{a^3}{3}(\frac{1}{b-a})\\
+\end{aligned}$$
+
+$$\begin{aligned}
+SD(Y)&=\sqrt {E(Y^2)-E(Y)^2}\\
+&=\sqrt{\frac{b^3}{3}(\frac{1}{b-a})-\frac{a^3}{3}(\frac{1}{b-a})-(\frac{b+a}{2})^2}\\
+&=\sqrt\frac{(b-a)^2}{12}\\
+\end{aligned}$$
+
+*Used the equation from problem 2b and adjusted for a continuous variable (n is now the range of possible values b-a while the negative 1 goes to 0 as step size is infinitely small).
+
+###
+#6
+##a.
+$$E(2X+4Y)=E(2X)+E(4Y)=1+8=9$$
+
+##b.
+$$\begin{aligned}
+SD(2X+4Y)&=\sqrt{Var(2X)+Var(4Y)}\\
+&=\sqrt{4*(1/12)+16(.33)} \\
+&=\sqrt{5(2/3)}\\
+&=2.38\\
+\end{aligned}$$
+
+##c.
+The variance will increase by 2Cov(X,Y)=1 to 6(2/3), and the SD will increase to ~2.6.
+
+
+
+##d.
+```{r}
+X<-runif(10000, 0, 1)
+Y<-runif(10000, 1, 3)
+mean(2*X+4*Y)
+sd(2*X+4*Y)
+```
+
+##e.
+```{r}
+require(copula)
+d<-rCopula(10000,normalCopula(.5))
+d[,2]<-1+(3-1)*d[,2]
+X2<-d[,1]
+Y2<-d[,2]
+sd(2*X2+4*Y2)
+```
+This is only slightly above the theoretical answer given in c, but very close.
+
+#7
+```{r}
+X3<-runif(100)
+Y3<-3+5*X3+rnorm(100)
+```
+##a.
+```{r}
+mylm<-lm(Y3~X3)
+summary(mylm)
+```
+The intercept of 2.64 is less than the known truth (3) we used to generate the data. The slope of 5.3699 is greater than the known truth (5) we used to generate the data.
+
+##b.
+```{r}
+plot(Y3 ~ X3)
+abline(mylm, col="red")
+abline(3,5,lwd=3)
+```
+
+It is very close to the "truth" value.
+
+##c.
+```{r}
+library(mosaic)
+save<-do(1000)*{
+  Y3=3+5*X3+rnorm(100)
+  lm(Y3~X3)
+}
+```
+```{r}
+vector<-apply(save,2,"mean")
+vec<-apply(save,2,"sd")
+meanintercept<-vector[1]
+meanslopes<-vector[2]
+sdintercept<-vec[1]
+sdslopes<-vec[2]
+meanintercept
+meanslopes
+sdintercept
+sdslopes
+```
+
+##d.
+```{r}
+apply(save[,1:2],2,quantile,c(0.025,.975))
+```
+
+```{r}
+hist(save$Intercept,main="Histogram of simulated confidence interval",ylab="# of trials")
+points(quantile(save$Intercept,0.025),0,pch=17,cex=1.5)
+points(quantile(save$Intercept,0.975),0,pch=17,cex=1.5)
+```
+
+```{r}
+hist(save$X3,main="Histogram of simulated confidence interval",ylab="# of trials")
+points(quantile(save$X3,0.025),0,pch=17,cex=1.5)
+points(quantile(save$X3,0.975),0,pch=17,cex=1.5)
+```
+
+e.
+```{r}
+plot(save$X3,save$Intercept)
+```
+No, the slopes and the intercepts do not appear to be independent. In fact, there seems to be an indirect linear relationship between the slopes and the intercepts. This makes sense, as a smaller value for the intercept should indicate a greater slope. Just because the data points where X3 is close to 0 are smaller than the "truth value", does not mean the other points are small compared to the "truth value"", and the best fit line will have to have a greater slope to reach points closer to this value. 
